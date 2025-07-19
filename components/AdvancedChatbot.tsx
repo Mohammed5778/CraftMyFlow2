@@ -31,7 +31,7 @@ const AdvancedChatbot: React.FC<AdvancedChatbotProps> = ({ lang, isOpen, onClose
     const [chatHistory, setChatHistory] = useState<{ role: string; parts: { text: string }[] }[]>([]);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const t = translations[lang];
+    const t = translations[lang] || translations['en'];
 
     useEffect(() => {
         if (isOpen && messages.length === 0) {
