@@ -100,18 +100,18 @@ const SearchSystem: React.FC<SearchSystemProps> = ({ lang, onResultClick }) => {
                 projectsSnapshot.forEach((child) => {
                     const project = child.val() as Project;
                     const relevance = calculateRelevance(searchQuery, [
-                        project.title[lang],
-                        project.description[lang],
-                        project.category[lang]
+                        project.title?.[lang] || '',
+                        project.description?.[lang] || '',
+                        project.category?.[lang] || ''
                     ]);
                     
                     if (relevance > 0) {
                         results.push({
                             id: child.key!,
-                            title: project.title[lang],
-                            description: project.description[lang],
+                            title: project.title?.[lang] || '',
+                            description: project.description?.[lang] || '',
                             type: 'project',
-                            category: project.category[lang],
+                            category: project.category?.[lang] || '',
                             image: project.image,
                             relevanceScore: relevance
                         });
@@ -125,15 +125,15 @@ const SearchSystem: React.FC<SearchSystemProps> = ({ lang, onResultClick }) => {
                 servicesSnapshot.forEach((child) => {
                     const service = child.val() as Service;
                     const relevance = calculateRelevance(searchQuery, [
-                        service.title[lang],
-                        service.desc[lang]
+                        service.title?.[lang] || '',
+                        service.desc?.[lang] || ''
                     ]);
                     
                     if (relevance > 0) {
                         results.push({
                             id: child.key!,
-                            title: service.title[lang],
-                            description: service.desc[lang],
+                            title: service.title?.[lang] || '',
+                            description: service.desc?.[lang] || '',
                             type: 'service',
                             relevanceScore: relevance
                         });
