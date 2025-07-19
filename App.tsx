@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { HashRouter, Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom';
 import { auth, database, getCommunityPosts, approveCommunityPost, addCommunityPost, saveConversation, getUserConversations, addPurchase, getUserPurchases } from './services/firebase';
@@ -6,6 +5,14 @@ import { getChatbotResponse, analyzeChatForLeadQualification, getAiConsultation,
 import type { User } from 'firebase/auth';
 import { translations, servicesData, projectsData, ADMIN_EMAIL } from './constants';
 import { CommunityPost, Project, Service, ConsultationResponse, SavedConversation, PurchaseRecord } from './types';
+import SearchSystem from './components/SearchSystem';
+import AdvancedChatbot from './components/AdvancedChatbot';
+import PerformanceOptimizer from './components/PerformanceOptimizer';
+import AccessibilityEnhancer from './components/AccessibilityEnhancer';
+import PWAInstaller from './components/PWAInstaller';
+import NotificationSystem from './components/NotificationSystem';
+import RatingSystem from './components/RatingSystem';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 const N8N_WEBHOOK_URL = 'https://blackbox5577m.app.n8n.cloud/webhook-test/77c07039-baf3-48df-8762-7e661ff74f0b';
 
@@ -125,30 +132,56 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 // --- MAIN APP & LAYOUT ---
 export default function App() {
+    const [showChatbot, setShowChatbot] = useState(false);
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [showSearch, setShowSearch] = useState(false);
+
     return (
-        <LanguageProvider>
-            <AuthProvider>
-                <HashRouter>
-                    <MainLayout />
-                </HashRouter>
-            </AuthProvider>
-        </LanguageProvider>
+        <PerformanceOptimizer>
+            <AccessibilityEnhancer>
+                <LanguageProvider>
+                    <AuthProvider>
+                        <HashRouter>
+                            <MainLayout showChatbot={showChatbot} setShowChatbot={setShowChatbot} showSearch={showSearch} setShowSearch={setShowSearch} />
+                        </HashRouter>
+                    </AuthProvider>
+                </LanguageProvider>
+            </AccessibilityEnhancer>
+        </PerformanceOptimizer>
     );
 }
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{showChatbot: boolean; setShowChatbot: (show: boolean) => void; showSearch: boolean; setShowSearch: (show: boolean) => void}> = ({ showChatbot, setShowChatbot, showSearch, setShowSearch }) => {
     return (
         <>
-            <Header />
+            <Header showSearch={showSearch} setShowSearch={setShowSearch} />
             <main>
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/community" element={<CommunityPage />} />
                     <Route path="/admin" element={<AdminPage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/analytics" element={<AnalyticsDashboard />} />
                 </Routes>
             </main>
-            <Chatbot />
+            <AdvancedChatbot 
+                isOpen={showChatbot}
+                onClose={() => setShowChatbot(false)}
+            />
+            
+            {/* Chatbot Toggle Button */}
+            {!showChatbot && (
+                <button
+                    onClick={() => setShowChatbot(true)}
+                    className="fixed bottom-4 right-4 bg-neon-cyan hover:bg-neon-cyan/80 text-bg-color p-4 rounded-full shadow-lg z-40 transition-colors animate-pulse"
+                    aria-label="Open chatbot"
+                >
+                    <i className="fas fa-robot text-xl"></i>
+                </button>
+            )}
+            
+            {/* PWA Installer */}
+            <PWAInstaller />
             <Footer />
         </>
     );
@@ -156,7 +189,7 @@ const MainLayout: React.FC = () => {
 
 // --- COMPONENTS ---
 
-const Header: React.FC = () => {
+const Header: React.FC<{showSearch: boolean; setShowSearch: (show: boolean) => void}> = ({ showSearch, setShowSearch }) => {
     const { lang, setLang, t, dir } = useLanguage();
     const { currentUser, isAdmin } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -175,6 +208,7 @@ const Header: React.FC = () => {
         }
         if (isAdmin) {
             links.push({ to: "/admin", key: "nav_admin" });
+            links.push({ to: "/analytics", key: "nav_analytics" });
         }
         links.push({ to: "/#contact", key: "nav_contact" });
         return links;
@@ -212,6 +246,15 @@ const Header: React.FC = () => {
                 <nav className="container mx-auto px-5 flex justify-between items-center w-full">
                     <NavLink to="/#hero" className="text-xl font-bold text-text-primary" onClick={() => location.pathname === '/' && document.getElementById('hero')?.scrollIntoView({behavior: 'smooth'})}>{t('nav_logo')}</NavLink>
                     
+                    {/* Search Bar */}
+                    <div className="hidden md:block flex-1 max-w-md mx-8">
+                        <SearchSystem 
+                            onResultClick={(result) => {
+                                console.log('Search result clicked:', result);
+                            }}
+                        />
+                    </div>
+
                     {/* Desktop Nav */}
                     <div className="hidden lg:flex items-center gap-8">
                         <ul className="flex gap-8">
@@ -222,6 +265,17 @@ const Header: React.FC = () => {
                            ))}
                         </ul>
                         <div className="flex items-center gap-4">
+                            {/* Mobile Search Toggle */}
+                            <button
+                                onClick={() => setShowSearch(!showSearch)}
+                                className="md:hidden text-text-secondary hover:text-text-primary transition-colors"
+                            >
+                                <i className="fas fa-search"></i>
+                            </button>
+                            
+                            {/* Notifications */}
+                            {currentUser && <NotificationSystem />}
+
                             {/* Auth Buttons */}
                             {currentUser ? (
                                 <button onClick={() => auth.signOut()} className={`${authBtnClasses} ${logoutBtnClasses}`}>{t('nav_logout')}</button>
@@ -243,6 +297,18 @@ const Header: React.FC = () => {
                         </button>
                     </div>
                 </nav>
+                
+                {/* Mobile Search */}
+                {showSearch && (
+                    <div className="md:hidden mt-4">
+                        <SearchSystem 
+                            onResultClick={(result) => {
+                                setShowSearch(false);
+                                console.log('Search result clicked:', result);
+                            }}
+                        />
+                    </div>
+                )}
             </header>
 
             {/* Mobile Side Nav */}
